@@ -29,3 +29,21 @@ Also check out my other [tools and templates](https://pythonandvba.com/solutions
 If you find this project helpful, consider buying me a coffee. 
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://pythonandvba.com/coffee-donation)
+
+
+## Local Credential Web App
+
+The bcrypt credential logic from `generate_keys.py` is also served by a local
+FastAPI app (`app.py`):
+
+```bash
+uvicorn app:app          # http://127.0.0.1:8000
+```
+
+- `GET /` renders the credential panel (read-only badge, source, version, algorithm, last rotation time).
+- `POST /keys/rotate` reads two passphrases (or ``username:pass`` lines) from stdin, hashes with bcrypt and writes `credentials.json` atomically.
+- `POST /keys/verify` reads a single ``username:pass`` line from stdin.
+- Invalid source/algorithm/version at startup switches the store to read-only and returns `409` from both endpoints.
+- Legacy `hashed_pw.pkl` stays readable; the first write migrates to JSON (with byte-for-byte rollback on failure).
+- Source precedence: file > environment variable (`CREDENTIALS_JSON`) > config dir (`~/.config/sales-dashboard`) > legacy pickle. File changes hot-reload within 5 seconds; other sources never trigger reloads.
+- Tests: `pytest -q`.
